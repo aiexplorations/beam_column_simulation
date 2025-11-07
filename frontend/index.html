@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timoshenko Beam-Column Simulator</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+        // Configure backend URL (change port if needed)
+        window.API_BASE_URL = 'http://localhost:8888';
+    </script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>🏗️ Timoshenko Beam-Column Simulator</h1>
+                <p>Timoshenko beam analysis with numerical ODE solver for coupled beam-column interactions and P-Δ effects</p>
+            </div>
+        </header>
+
+        <div class="main">
+            <!-- Left Sidebar: Input Controls -->
+            <aside class="sidebar">
+                <div class="sidebar-content">
+                    <!-- Geometry Section -->
+                    <section class="control-section">
+                        <h2>Geometry</h2>
+                        <div class="control-group">
+                            <label for="length">Beam Length (m)</label>
+                            <input type="range" id="length" name="length" min="0.5" max="5.0" step="0.1" value="2.0">
+                            <span class="value-display" id="length-display">2.0</span>
+                        </div>
+                        <div class="control-group">
+                            <label for="width">Section Width (m)</label>
+                            <input type="range" id="width" name="width" min="0.01" max="0.3" step="0.01" value="0.1">
+                            <span class="value-display" id="width-display">0.1</span>
+                        </div>
+                        <div class="control-group">
+                            <label for="height">Section Height (m)</label>
+                            <input type="range" id="height" name="height" min="0.01" max="0.3" step="0.01" value="0.1">
+                            <span class="value-display" id="height-display">0.1</span>
+                        </div>
+                    </section>
+
+                    <!-- Material Section -->
+                    <section class="control-section">
+                        <h2>Material</h2>
+                        <div class="control-group">
+                            <label for="material">Select Material</label>
+                            <select id="material" name="material">
+                                <option value="Steel">Steel</option>
+                                <option value="Aluminum">Aluminum</option>
+                                <option value="Wood">Wood</option>
+                                <option value="Concrete">Concrete</option>
+                            </select>
+                        </div>
+                    </section>
+
+                    <!-- Beam Configuration -->
+                    <section class="control-section">
+                        <h2>Beam Configuration</h2>
+                        <div class="control-group">
+                            <label>Orientation</label>
+                            <div class="radio-group">
+                                <label><input type="radio" name="orientation" value="horizontal" checked> Horizontal</label>
+                                <label><input type="radio" name="orientation" value="vertical"> Vertical</label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label for="end-condition">End Conditions</label>
+                            <select id="end-condition" name="end-condition">
+                                <option value="cantilever">Cantilever (Fixed-Free)</option>
+                                <option value="simply_supported">Simply Supported (Hinged-Hinged)</option>
+                                <option value="fixed_fixed">Fixed-Fixed (Both Fixed)</option>
+                                <option value="hinged_free">Hinged-Free (Pinned-Free)</option>
+                            </select>
+                        </div>
+                        <div class="control-group checkbox">
+                            <label><input type="checkbox" id="self-weight" name="self-weight" checked> Include Self-Weight</label>
+                        </div>
+                    </section>
+
+                    <!-- Applied Loads -->
+                    <section class="control-section">
+                        <h2>Applied Loads</h2>
+                        <div class="control-group">
+                            <label for="axial-load">Axial Compressive Load (kN)</label>
+                            <input type="range" id="axial-load" name="axial-load" min="0" max="500" step="10" value="50">
+                            <span class="value-display" id="axial-load-display">50</span>
+                        </div>
+                        <div class="control-group">
+                            <label for="lateral-load">Distributed Lateral Load (kN/m)</label>
+                            <input type="range" id="lateral-load" name="lateral-load" min="0" max="100" step="1" value="10">
+                            <span class="value-display" id="lateral-load-display">10</span>
+                        </div>
+                    </section>
+
+                    <!-- Point Loads -->
+                    <section class="control-section">
+                        <h2>Point Loads</h2>
+                        <div class="control-group">
+                            <label for="num-point-loads">Number of Point Loads</label>
+                            <input type="number" id="num-point-loads" name="num-point-loads" min="0" max="5" value="2">
+                        </div>
+                        <div id="point-loads-container"></div>
+                    </section>
+
+                    <!-- Solve Button -->
+                    <button id="solve-btn" class="solve-button">🔧 Solve Problem</button>
+                    <div id="status-message" class="status-message"></div>
+                </div>
+            </aside>
+
+            <!-- Right Content Area: Results -->
+            <main class="content">
+                <div id="results-container" class="results-container" style="display: none;">
+                    <!-- Summary Metrics -->
+                    <section class="summary-metrics">
+                        <div class="metric-card">
+                            <div class="metric-value" id="metric-deflection">-</div>
+                            <div class="metric-label">Max Deflection (mm)</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="metric-stress">-</div>
+                            <div class="metric-label">Max Stress (MPa)</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="metric-moment">-</div>
+                            <div class="metric-label">Max Moment (kN·m)</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="metric-shear">-</div>
+                            <div class="metric-label">Max Shear (kN)</div>
+                        </div>
+                    </section>
+
+                    <!-- Tabs -->
+                    <div class="tabs">
+                        <button class="tab-button active" data-tab="charts">📊 Charts</button>
+                        <button class="tab-button" data-tab="summary">📋 Summary</button>
+                        <button class="tab-button" data-tab="data">📥 Data</button>
+                    </div>
+
+                    <!-- Charts Tab -->
+                    <div id="charts-tab" class="tab-content active">
+                        <div class="charts-grid">
+                            <div class="chart-container plotly-container">
+                                <div id="deflection-chart"></div>
+                            </div>
+                            <div class="chart-container plotly-container">
+                                <div id="moment-chart"></div>
+                            </div>
+                            <div class="chart-container plotly-container">
+                                <div id="shear-chart"></div>
+                            </div>
+                            <div class="chart-container plotly-container">
+                                <div id="stress-chart"></div>
+                            </div>
+                            <div class="chart-container plotly-container" style="grid-column: 1 / -1;">
+                                <div id="stress-heatmap"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Summary Tab -->
+                    <div id="summary-tab" class="tab-content">
+                        <div class="summary-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Property</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="summary-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Data Tab -->
+                    <div id="data-tab" class="tab-content">
+                        <div class="data-controls">
+                            <button id="export-csv-btn" class="export-btn">📥 Download CSV</button>
+                        </div>
+                        <div class="data-table-wrapper">
+                            <table id="results-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Position (m)</th>
+                                        <th>Deflection (mm)</th>
+                                        <th>Moment (kN·m)</th>
+                                        <th>Shear (kN)</th>
+                                        <th>Bending Stress (MPa)</th>
+                                        <th>Axial Stress (MPa)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="results-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="empty-state" class="empty-state">
+                    <div class="empty-state-content">
+                        <h2>👈 Adjust parameters and click Solve to begin analysis</h2>
+                        <p>Configure the beam geometry, material properties, and loads in the sidebar, then solve to see results.</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
