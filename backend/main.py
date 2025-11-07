@@ -63,8 +63,7 @@ class MaterialInfo(BaseModel):
     youngs_modulus: float = Field(..., alias="E")
     yield_stress: float
 
-    class Config:
-        populate_by_name = True
+    model_config = {"populate_by_name": True, "by_alias": True}
 
 
 class PointLoadData(BaseModel):
