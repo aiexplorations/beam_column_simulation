@@ -275,5 +275,5 @@ async def solve_problem(request: SolveProblemRequest):
 if __name__ == "__main__":
     import uvicorn
     import sys
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8888
     uvicorn.run(app, host="0.0.0.0", port=port)

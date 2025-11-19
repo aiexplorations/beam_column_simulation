@@ -124,6 +124,7 @@ The application loads with a default test case:
 cd /Users/rajesh/Github/beam_column_simulation
 python3 -m venv venv
 source venv/bin/activate
+pip install -r requirements.txt
 ```
 
 2. **Install dependencies:**
@@ -133,7 +134,7 @@ pip install fastapi uvicorn
 
 3. **Verify physics module:**
 ```bash
-python -c "from beam_column import *; print('Physics module loaded')"
+python -c "import sys; sys.path.append('physics'); from beam_column import *; print('Physics module loaded')"
 ```
 
 ### Running the Application
@@ -141,7 +142,7 @@ python -c "from beam_column import *; print('Physics module loaded')"
 1. **Start the backend (in terminal 1):**
 ```bash
 source venv/bin/activate
-python backend.py 8888
+python backend/main.py
 ```
 
 The backend will start on `http://localhost:8888`
@@ -150,7 +151,7 @@ The backend will start on `http://localhost:8888`
 ```
 Open index.html in your default browser
 or
-Visit: file:///Users/rajesh/Github/beam_column_simulation/index.html
+Visit: file:///Users/rajesh/Github/beam_column_simulation/frontend/index.html
 ```
 
 ### Verification
@@ -170,18 +171,24 @@ Expected response:
 ```
 beam_column_simulation/
 ├── README.md                 # Documentation
-├── index.html               # Main frontend HTML
-├── backend.py               # FastAPI backend server
-├── beam_column.py          # Physics solver module
-├── visualizer.py           # Visualization utilities
-├── js/
-│   ├── api.js              # Backend API client
-│   ├── state.js            # Application state management
-│   ├── ui.js               # UI rendering and charts
-│   └── main.js             # Application initialization
-├── css/
-│   └── style.css           # Responsive styling
-└── [demo scripts]          # Various analysis examples
+├── launch.sh                 # Launch script
+├── requirements.txt          # Python dependencies
+├── backend/
+│   └── main.py              # FastAPI backend server
+├── physics/
+│   ├── beam_column.py       # Physics solver module
+│   ├── visualizer.py        # Visualization utilities
+│   └── materials.py         # Material definitions
+├── frontend/
+│   ├── index.html           # Main frontend HTML
+│   ├── js/
+│   │   ├── api.js           # Backend API client
+│   │   ├── state.js         # Application state management
+│   │   ├── ui.js            # UI rendering and charts
+│   │   └── main.js          # Application initialization
+│   └── css/
+│       └── style.css        # Responsive styling
+└── [demo scripts]           # Various analysis examples
 ```
 
 ## API Reference
